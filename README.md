@@ -1,2 +1,2 @@
 # threadingwebdriver
-Selenium webdriver using a thread.
+Selenium webdriver using a thread. (Available chrome only now.)
