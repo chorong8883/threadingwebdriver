@@ -8,7 +8,7 @@ version = "0.0.1"
 authors = [
   { name="Chor", email="chorong8883@gmail.com" },
 ]
-description = "Selenium webdriver using a thread. (Available chrome only now.)"
+description = "Selenium webdriver using thread pool. (Chrome only now.)"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

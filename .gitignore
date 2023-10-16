@@ -161,3 +161,4 @@ cython_debug/
 
 chrome_data
 test.py
+*.png
