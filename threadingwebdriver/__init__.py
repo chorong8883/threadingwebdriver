@@ -84,6 +84,7 @@ class ChromeWebdriver():
             driver_file_name = self.__download_driver(browser_version_by_bash)
         
         driver_file_path = f"{self.__get_drivers_path()}/{driver_file_name}"
+        print(f"driver_file_path:{driver_file_path}")
         driver = self.__get_driver(driver_file_path, window_width, window_height, is_enable_image, user_agent)
         browser_version = self.__get_browser_version_by_driver(driver)
         driver_version = self.__get_driver_version(driver)
@@ -92,8 +93,10 @@ class ChromeWebdriver():
         driver.quit()
         
         if driver_file_name == self.default_downloaded_driver_name:
-            self.__change_driver_filename(driver_file_name, browser_version, driver_version)
-        
+            driver_file_name = self.__change_driver_filename(driver_file_name, browser_version, driver_version)
+            driver_file_path = f"{self.__get_drivers_path()}/{driver_file_name}"
+        print(driver_file_name)
+        print(driver_file_path)
         self.__driver = self.__get_driver(driver_file_path, window_width, window_height, is_enable_image, user_agent)
         user_agent = self.__get_user_agent(self.__driver)
         print(f"user_agent:{user_agent}")
@@ -104,10 +107,12 @@ class ChromeWebdriver():
             profile_path = self.__get_profile_path()
             self.__remove_directory(profile_path)
 
-    def __change_driver_filename(self, driver_file_name:str, browser_version:str, driver_version:str):
+    def __change_driver_filename(self, driver_file_name:str, browser_version:str, driver_version:str) -> str:
+        dst_filename = f"{self.__driver_name}{self.separator}{self.chrome_version_separator}{browser_version}{self.separator}{self.driver_version_separator}{driver_version}"
         src_path = f"{self.__get_drivers_path()}/{driver_file_name}"
-        dst_path = f"{self.__get_drivers_path()}/{self.__driver_name}{self.separator}{self.chrome_version_separator}{browser_version}{self.separator}{self.driver_version_separator}{driver_version}"
+        dst_path = f"{self.__get_drivers_path()}/{dst_filename}"
         os.rename(src_path, dst_path)
+        return dst_filename
 
     def __get_user_agent(self, driver:webdriver.Chrome) -> str:
         if driver:
@@ -135,6 +140,8 @@ class ChromeWebdriver():
                      user_agent:str == None) -> webdriver.Chrome:
         options = webdriver.ChromeOptions()
         options.add_argument('headless')
+        if user_agent:
+            options.add_argument(f'--user_agent:{user_agent}')
         options.add_argument('disable-gpu')
         options.add_argument('disable-infobars')
         options.add_argument('--disable-extensions')
@@ -144,8 +151,6 @@ class ChromeWebdriver():
         options.add_argument('--disable-user-media-security=true')
         options.add_argument('ignore-certificate-errors')
         options.add_argument('lang=ko_KR')
-        if user_agent:
-            options.add_argument(f'--user_agent:{user_agent}')
         options.add_argument(f'window-size={window_width}x{window_height}')
         options.add_argument(f'user-data-dir={self.__get_profile_path()}')
         
