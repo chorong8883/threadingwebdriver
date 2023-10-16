@@ -100,5 +100,5 @@ driver = threadingwebdriver.ChromeWebdriver()
 driver.initialize(websocket_listening_function=websocket_listener)
 
 url = 'https:// Input Your URL'
-driver.open_wait(3, url)
+driver.open(3, url)
 ```
