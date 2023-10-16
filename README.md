@@ -65,7 +65,7 @@ body:WebElement = driver.get_element_xpath(timeout, body_xpath)
 ```
 
 ## Exceptions
-Based on thread priority.  
+Based on thread order.  
 ```python
 url1 = 'https://www.google.com/'
 url2 = 'https://www.github.com/'
@@ -84,5 +84,21 @@ driver.open_async(url1)
 timeout = 3
 body_xpath = '/html/body'
 body_xpath_result:WebElementAsyncResult = driver.get_element_xpath_async(timeout, body_xpath)
-driver.open_async(url2) # Exception: run 'open_async(url2)' when not finish 'get_element_xpath_async()'.
+driver.open_async(url2) 
+# Exception: run 'open_async(url2)' if not finish 'get_element_xpath_async()'.
+```
+
+## Initialize Websocket Listener
+```python
+async def websocket_listener(listener):
+    async for event in listener:
+        payload_data = event.response.payload_data
+        print(payload_data)
+
+import threadingwebdriver
+driver = threadingwebdriver.ChromeWebdriver()
+driver.initialize(websocket_listening_function=websocket_listener)
+
+url = 'https:// Input Your URL'
+driver.open_wait(3, url)
 ```
