@@ -1,7 +1,8 @@
 # threadingwebdriver
-Selenium webdriver using two threadpools. (Available chrome only now.)  
+Selenium headless webdriver using two threadpools.  
 ThreadPool(1) for control browser.  
-ThreadPool(custom_number) for read page(get WebElement).  
+ThreadPool(custom_number) for read page(ex: get WebElement).  
+Chrome only.  
 
 ## Initialize
 ```python
@@ -64,6 +65,21 @@ body_xpath = '/html/body'
 body:WebElement = driver.get_element_xpath(timeout, body_xpath)
 ```
 
+## Initialize Websocket Listener
+```python
+async def websocket_listener(listener):
+    async for event in listener:
+        payload_data = event.response.payload_data
+        print(payload_data)
+
+import threadingwebdriver
+driver = threadingwebdriver.ChromeWebdriver()
+driver.initialize(websocket_listening_function=websocket_listener)
+
+url = 'https:// Input Your URL'
+driver.open(3, url)
+```
+
 ## Exceptions
 Based on thread order.  
 ```python
@@ -86,19 +102,4 @@ body_xpath = '/html/body'
 body_xpath_result:WebElementAsyncResult = driver.get_element_xpath_async(timeout, body_xpath)
 driver.open_async(url2) 
 # Exception: run 'open_async(url2)' if not finish 'get_element_xpath_async()'.
-```
-
-## Initialize Websocket Listener
-```python
-async def websocket_listener(listener):
-    async for event in listener:
-        payload_data = event.response.payload_data
-        print(payload_data)
-
-import threadingwebdriver
-driver = threadingwebdriver.ChromeWebdriver()
-driver.initialize(websocket_listening_function=websocket_listener)
-
-url = 'https:// Input Your URL'
-driver.open(3, url)
 ```
