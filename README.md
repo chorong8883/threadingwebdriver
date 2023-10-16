@@ -39,6 +39,21 @@ body_xpath_result:WebElementAsyncResult = driver.get_element_xpath_async(timeout
 # code...
 body:WebElement = body_xpath_result.get()
 ```
+Concurrency
+```python
+import threadingwebdriver
+driver = threadingwebdriver.ChromeWebdriver()
+driver.initialize(read_thread_count = 3)
+
+timeout = 2
+p_async = driver.get_element_xpath_async(timeout, '/html/body/div/p')
+a_async = driver.get_element_xpath_async(timeout, '/html/body/div/a')
+div_async = driver.get_element_xpath_async(timeout, '/html/body/div')
+
+p = p_async.get()
+a = a_async.get()
+div = div_async.get()
+```
 
 ## Get Element (Sync)
 ```python
@@ -57,7 +72,7 @@ driver.open_async(url2)
 timeout = 3
 body_xpath = '/html/body'
 body_xpath_result:WebElementAsyncResult = driver.get_element_xpath_async(timeout, body_xpath) 
-# Exception: if run before open url2.
+# Exception: if run 'get_element_xpath_async()' before run 'open_async(url2)'.
 ```
 
 ```python
@@ -67,5 +82,5 @@ driver.open_async(url1)
 timeout = 3
 body_xpath = '/html/body'
 body_xpath_result:WebElementAsyncResult = driver.get_element_xpath_async(timeout, body_xpath)
-driver.open_async(url2) # Exception: Open url2 before get element from url1.
+driver.open_async(url2) # Exception: run 'open_async(url2)' when not finish 'get_element_xpath_async()'.
 ```
