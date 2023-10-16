@@ -11,7 +11,7 @@ driver.initialize()
 ```
 
 ## Close
-Close driver. Wait tasks of ThreadPools are finish.  
+Close driver. It will wait tasks of ThreadPools are finish.  
 ```python
 driver.close()
 ```
