@@ -44,8 +44,10 @@ Concurrency
 import threadingwebdriver
 driver = threadingwebdriver.ChromeWebdriver()
 driver.initialize(read_thread_count = 3)
-
 timeout = 2
+url = "Input Your URL"
+driver.open(timeout, url)
+
 p_async = driver.get_element_xpath_async(timeout, '/html/body/div/p')
 a_async = driver.get_element_xpath_async(timeout, '/html/body/div/a')
 div_async = driver.get_element_xpath_async(timeout, '/html/body/div')
