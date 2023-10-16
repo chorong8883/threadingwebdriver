@@ -8,6 +8,7 @@ import zipfile
 from multiprocessing.pool import ThreadPool, AsyncResult
 
 from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 
 class ChromeWebdriver():
     separator = '_'
@@ -29,8 +30,8 @@ class ChromeWebdriver():
                 window_width:int=800, 
                 window_height:int=600, 
                 is_enable_image:bool=False, 
-                websocket_listening_function=None,
-                user_agent:str=None):
+                user_agent:str=None,
+                websocket_listening_function=None):
         
         uname = platform.uname()
         if uname.system == "Windows":
@@ -45,21 +46,115 @@ class ChromeWebdriver():
         self.__data_dir_name = data_dir_name
         self.__profile_name = profile_name
         self.__driver_name = driver_name
+        self.__is_remove_profile_when_close = is_remove_profile_when_close
                 
-        self.__check_paths()
+        data_path = self.__get_data_path()
+        if not os.path.exists(data_path):
+            os.mkdir(data_path)
+            
+        drivers_path = self.__get_drivers_path()
+        if not os.path.exists(drivers_path):
+            os.mkdir(drivers_path)
+        
+        profiles_path = self.__get_profiles_path()
+        if not os.path.exists(profiles_path):
+            os.mkdir(profiles_path)
+        
+        profile_path = self.__get_profile_path()
+        if os.path.exists(profile_path):
+            if is_remove_profile_when_start:
+                self.__remove_directory(profile_path)
+                os.mkdir(profile_path)
+        else:
+            os.mkdir(profile_path)
         
         self.__browser_thread = ThreadPool(1)
-        self.__read_page_thread_pool = ThreadPool(read_thread_count)
+        self.__read_thread_pool = ThreadPool(read_thread_count)
         
-        self.reset_driver()
+        self.reset_driver(window_width, window_height, is_enable_image, user_agent)
     
-    def reset_driver(self):
+    def reset_driver(self, 
+                     window_width:int, 
+                     window_height:int, 
+                     is_enable_image:bool=False, 
+                     user_agent:str=None):
         browser_version_by_bash = self.__get_browser_version_by_bash()
         driver_file_name = self.__find_driver_file(browser_version_by_bash)
         if driver_file_name == "":
-            download_file_name = self.__download_driver(browser_version_by_bash)
-            print(download_file_name)
+            driver_file_name = self.__download_driver(browser_version_by_bash)
         
+        driver_file_path = f"{self.__get_drivers_path()}/{driver_file_name}"
+        driver = self.__get_driver(driver_file_path, window_width, window_height, is_enable_image, user_agent)
+        browser_version = self.__get_browser_version_by_driver(driver)
+        driver_version = self.__get_driver_version(driver)
+        user_agent = self.__get_user_agent(driver)
+        
+        driver.quit()
+        
+        if driver_file_name == self.default_downloaded_driver_name:
+            self.__change_driver_filename(driver_file_name, browser_version, driver_version)
+        
+        self.__driver = self.__get_driver(driver_file_path, window_width, window_height, is_enable_image, user_agent)
+        user_agent = self.__get_user_agent(self.__driver)
+        print(f"user_agent:{user_agent}")
+        self.__driver.quit()
+
+    def close(self):
+        if self.__is_remove_profile_when_close:
+            profile_path = self.__get_profile_path()
+            self.__remove_directory(profile_path)
+
+    def __change_driver_filename(self, driver_file_name:str, browser_version:str, driver_version:str):
+        src_path = f"{self.__get_drivers_path()}/{driver_file_name}"
+        dst_path = f"{self.__get_drivers_path()}/{self.__driver_name}{self.separator}{self.chrome_version_separator}{browser_version}{self.separator}{self.driver_version_separator}{driver_version}"
+        os.rename(src_path, dst_path)
+
+    def __get_user_agent(self, driver:webdriver.Chrome) -> str:
+        if driver:
+            user_agent:str = driver.execute_script("return navigator.userAgent")
+            user_agent = user_agent.replace('HeadlessChrome/', 'Chrome/')
+            return user_agent
+        else:
+            return ""
+    
+    def __get_browser_version_by_driver(self, driver:webdriver.Chrome) -> str:
+        if driver:
+            return driver.capabilities['browserVersion'].split(' ')[0]
+        else:
+            return ""
+    
+    def __get_driver_version(self, driver:webdriver.Chrome) -> str:
+        if driver:
+            return driver.capabilities['chrome']['chromedriverVersion'].split(' ')[0]
+    
+    def __get_driver(self,
+                     driver_file_path:str, 
+                     window_width:int, 
+                     window_height:int, 
+                     is_enable_image:bool, 
+                     user_agent:str == None) -> webdriver.Chrome:
+        options = webdriver.ChromeOptions()
+        options.add_argument('headless')
+        options.add_argument('disable-gpu')
+        options.add_argument('disable-infobars')
+        options.add_argument('--disable-extensions')
+        options.add_argument('no-sandbox')
+        options.add_argument('disable-setui-sandbox')
+        options.add_argument('disable-dev-shm-usage')
+        options.add_argument('--disable-user-media-security=true')
+        options.add_argument('ignore-certificate-errors')
+        options.add_argument('lang=ko_KR')
+        if user_agent:
+            options.add_argument(f'--user_agent:{user_agent}')
+        options.add_argument(f'window-size={window_width}x{window_height}')
+        options.add_argument(f'user-data-dir={self.__get_profile_path()}')
+        
+        if is_enable_image is False:
+            options.add_argument('--blink-settings=imagesEnabled=false')
+            options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2})
+
+        service = Service(executable_path=driver_file_path)
+        return webdriver.Chrome(service=service, options=options)
         
     def __get_browser_version_by_bash(self) -> str:
         result_bytes = b''
@@ -87,6 +182,14 @@ class ChromeWebdriver():
         
         for file_name, _, file_chrome_version in driver_file_version_list:
             if file_chrome_version == chrome_version:
+                return file_name
+            
+        for file_name, _, file_chrome_version in driver_file_version_list:
+            if file_name == self.__driver_name:
+                return file_name
+            
+        for file_name, _, file_chrome_version in driver_file_version_list:
+            if file_name == self.default_downloaded_driver_name:
                 return file_name
             
         return ""
@@ -233,26 +336,8 @@ class ChromeWebdriver():
     def __get_profiles_path(self):
         return f"{self.__running_path}/{self.__data_dir_name}/profiles"
     
+    def __get_profile_path_temp(self):
+        return f"{self.__running_path}/{self.__data_dir_name}/profiles/temp"
+    
     def __get_profile_path(self):
         return f"{self.__running_path}/{self.__data_dir_name}/profiles/{self.__profile_name}"
-    
-    def __check_paths(self):
-        print("__running_path:", self.__running_path)
-        
-        data_path = self.__get_data_path()
-        if not os.path.exists(data_path):
-            os.mkdir(data_path)
-            
-        drivers_path = self.__get_drivers_path()
-        if not os.path.exists(drivers_path):
-            os.mkdir(drivers_path)
-        
-        profiles_path = self.__get_profiles_path()
-        if not os.path.exists(profiles_path):
-            os.mkdir(profiles_path)
-            
-        profile_path = self.__get_profile_path()
-        if not os.path.exists(profile_path):
-            os.mkdir(profile_path)
-        
-        
