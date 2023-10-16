@@ -361,7 +361,7 @@ class ChromeWebdriver():
         if uname.system == "Darwin":
             platform_name = f"mac-{uname.machine}"
             
-        if uname.system == "linux":
+        if uname.system == "Linux":
             platform_name = "linux64"
         return platform_name
     
