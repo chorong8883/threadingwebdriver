@@ -235,7 +235,64 @@ class ChromeWebdriver():
         result = self.__read_thread_pool.apply_async(WebDriverWait(self.__driver, timeout).until, args=(expect_function,))
         return result.get()
     
+    # def input_text(self, input_element:WebElement, text:str):
+    #     input_element.click()
+    #     for c in text:
+    #         input_element.send_keys(Keys.DOWN, c)
     
+    # def input_text_async(self, input_element:WebElement, text:str):
+    #     self.__main_thread_pool.apply_async(self.input_text, args=(input_element, text))
+    
+    # def click_async(self, element:WebElement):
+    #     self.__main_thread_pool.apply_async(element.click)
+    
+    # def get_alert(self, timeout:float) -> Alert | bool:
+    #     '''
+    #     Main Thread Pool\n
+    #     return Alert or False
+    #     -
+    #     '''
+    #     expect_function = EC.alert_is_present()
+    #     result = self.__main_thread_pool.apply_async(WebDriverWait(self.driver, timeout).until, args=(expect_function,))
+    #     return result.get()
+        
+    # def url_to_be_async(self, timeout:float, url:str) -> AsyncResult:
+    #     '''
+    #     Main Thread Pool\n
+    #     return AsyncResult
+    #     -
+    #     AsyncResult.get() return bool
+    #     -
+    #     '''
+    #     expect_function = EC.url_to_be(url)
+    #     return self.__main_thread_pool.apply_async(WebDriverWait(self.driver, timeout).until, args=(expect_function,))
+    
+    # def get_url_to_be_first(self, timeout:float, url_list:list[str]):
+    #     '''
+    #     Not Main Thread Pool (ThreadPoolExecutor)
+    #     '''
+    #     def temp_func(_timeout:float, _url:str, _q:queue.Queue):
+    #         result = WebDriverWait(self.driver, _timeout).until(EC.url_to_be(_url))
+    #         if result:
+    #             _q.put_nowait(_url)
+        
+    #     url_count = len(url_list)
+    #     temp_q = queue.Queue()
+    #     future_list = []
+        
+    #     executor = concurrent.futures.ThreadPoolExecutor(url_count)
+    #     for url in url_list:
+    #         future = executor.submit(temp_func, timeout, url, temp_q)
+    #         future_list.append(future)
+            
+    #     url_result = temp_q.get()
+        
+    #     for _f in future_list:
+    #         f:concurrent.futures._base.Future = _f
+    #         if f.done() == False:
+    #             f.cancel()
+                
+    #     return url_result
 
     ################################################################################################################
     ################################################################################################################

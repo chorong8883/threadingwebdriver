@@ -19,6 +19,7 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: POSIX :: Linux",
 ]
+keywords = ["selenium", "webdriver", "thread", "threading selenium", "threading webdriver"]
 
 [project.urls]
 "Homepage" = "https://github.com/chorong8883/threadingwebdriver"
