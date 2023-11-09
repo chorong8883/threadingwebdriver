@@ -101,5 +101,5 @@ timeout = 3
 body_xpath = '/html/body'
 body_xpath_result:WebElementAsyncResult = driver.get_element_xpath_async(timeout, body_xpath)
 driver.open_async(url2) 
-# Exception: run 'open_async(url2)' if not finish 'get_element_xpath_async()'.
+# Exception: run 'open_async(url2)' if 'get_element_xpath_async()' is not finish.
 ```

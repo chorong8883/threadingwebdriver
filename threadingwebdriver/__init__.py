@@ -42,6 +42,7 @@ class ChromeWebdriver():
         self.__driver:webdriver.Chrome = None
         
     def initialize(self, 
+                is_headless:bool,
                 data_dir_name:str = "chrome_data",
                 profile_name:str = "default",
                 driver_name:str = "chromedriver",
@@ -50,7 +51,7 @@ class ChromeWebdriver():
                 read_thread_count:int= 3,
                 window_width:int= 800, 
                 window_height:int= 600, 
-                is_enable_image:bool= False, 
+                is_enable_image:bool= True, 
                 user_agent:str= None,
                 websocket_listening_function= None):
         
@@ -97,13 +98,14 @@ class ChromeWebdriver():
         self.__browser_thread = ThreadPool(1)
         self.__read_thread_pool = ThreadPool(read_thread_count)
         
-        self.reset_driver(window_width, window_height, is_enable_image, user_agent)
+        self.reset_driver(is_headless, window_width, window_height, is_enable_image, user_agent)
         
         if websocket_listening_function:
             self.reset_websocket_listener(websocket_listening_function)
         
     
     def reset_driver(self, 
+                     is_headless:bool,
                      window_width:int= None, 
                      window_height:int= None, 
                      is_enable_image:bool= None, 
@@ -124,7 +126,7 @@ class ChromeWebdriver():
             driver_file_name = self.__download_driver(browser_version_by_bash)
             
         driver_file_path = f"{self.__get_drivers_path()}/{driver_file_name}"
-        temp_driver = self.__get_driver(driver_file_path, window_width, window_height, is_enable_image, user_agent)
+        temp_driver = self.__get_driver(is_headless, driver_file_path, window_width, window_height, is_enable_image, user_agent)
         browser_version = self.__get_browser_version_by_driver(temp_driver)
         driver_version = self.__get_driver_version(temp_driver)
         user_agent = self.__get_user_agent(temp_driver)
@@ -134,7 +136,7 @@ class ChromeWebdriver():
             driver_file_name = self.__change_driver_filename(driver_file_name, browser_version, driver_version)
             driver_file_path = f"{self.__get_drivers_path()}/{driver_file_name}"
         
-        self.__driver = self.__get_driver(driver_file_path, window_width, window_height, is_enable_image, user_agent)
+        self.__driver = self.__get_driver(is_headless, driver_file_path, window_width, window_height, is_enable_image, user_agent)
         self.__user_agent = self.__get_user_agent(self.__driver)
         
     def close(self):
@@ -195,6 +197,10 @@ class ChromeWebdriver():
         expect_function = EC.url_to_be(url)
         return self.__read_thread_pool.apply_async(WebDriverWait(self.__driver, timeout).until, args=(expect_function,))
     
+    def save_screenshot(self, filename:str) -> BoolAsyncResult:
+        result = self.__read_thread_pool.apply_async(self.__driver.save_screenshot, args=(filename,))
+        return result.get()
+        
     def save_screenshot_async(self, filename:str) -> BoolAsyncResult:
         '''
         Parameters
@@ -234,6 +240,35 @@ class ChromeWebdriver():
         expect_function = EC.presence_of_element_located((By.XPATH, xpath))
         result = self.__read_thread_pool.apply_async(WebDriverWait(self.__driver, timeout).until, args=(expect_function,))
         return result.get()
+    
+    def get_element_id(self, timeout:float, id:str) -> WebElement:
+        '''
+        Parameters
+        -
+        timeout (float): timeout seconds\n
+        xpath (str): xpath string\n
+        return
+        -
+        WebElement\n
+        '''
+        expect_function = EC.presence_of_element_located((By.ID, id))
+        result = self.__read_thread_pool.apply_async(WebDriverWait(self.__driver, timeout).until, args=(expect_function,))
+        return result.get()
+    
+    def get_elements_by_tag_name(self, timeout:float, tag_name:str) -> WebElement:
+        '''
+        Parameters
+        -
+        timeout (float): timeout seconds\n
+        xpath (str): xpath string\n
+        return
+        -
+        WebElement\n
+        '''
+        expect_function = EC.presence_of_all_elements_located((By.TAG_NAME, tag_name))
+        result = self.__read_thread_pool.apply_async(WebDriverWait(self.__driver, timeout).until, args=(expect_function,))
+        return result.get()
+    
     
     # def input_text(self, input_element:WebElement, text:str):
     #     input_element.click()
@@ -505,32 +540,34 @@ class ChromeWebdriver():
         return user_agent
         
     def __get_driver(self,
+                     is_headless:bool,
                      driver_file_path:str, 
                      window_width:int, 
                      window_height:int, 
                      is_enable_image:bool, 
                      user_agent:str == None) -> webdriver.Chrome:
         options = webdriver.ChromeOptions()
-        options.add_argument('headless')
+        if is_headless:
+            options.add_argument('headless')
+            options.add_argument('disable-gpu')
+            options.add_argument('disable-extensions')
+            options.add_argument('no-sandbox')
+            options.add_argument('disable-setuid-sandbox')
+            options.add_argument('disable-dev-shm-usage')
+            options.add_argument('disable-user-media-security=true')
+            options.add_argument('ignore-certificate-errors')
+            options.add_argument(f'window-size={window_width},{window_height}')
+            options.add_argument(f'user-data-dir={self.__get_profile_path()}')
+        
         if user_agent:
             options.add_argument(f'user_agent={user_agent}')
-        
-        options.add_argument('disable-gpu')
-        options.add_argument('disable-extensions')
-        options.add_argument('no-sandbox')
-        options.add_argument('disable-setuid-sandbox')
-        options.add_argument('disable-dev-shm-usage')
-        options.add_argument('disable-user-media-security=true')
-        options.add_argument('ignore-certificate-errors')
-        options.add_argument('lang=ko_KR')
-        
-        options.add_argument(f'window-size={window_width},{window_height}')
-        options.add_argument(f'user-data-dir={self.__get_profile_path()}')
         
         if is_enable_image is False:
             options.add_argument('blink-settings=imagesEnabled=false')
             options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2})
 
+        options.add_argument('lang=ko_KR')
+        
         service = Service(executable_path=driver_file_path)
         return webdriver.Chrome(service=service, options=options)
         
